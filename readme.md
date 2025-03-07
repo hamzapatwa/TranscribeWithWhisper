@@ -1,85 +1,166 @@
-# Whisper Automator Script for macOS
+# **Automating OpenAI Whisper on macOS with Automator**
 
-This script enables macOS users to transcribe audio files into text using the `mlx_whisper` tool, leveraging OpenAI's Whisper model. By integrating this script with Automator, users can right-click on audio files and select a "Transcribe with Whisper" option, generating a text transcript in the same directory as the original audio file.
+## **Overview**
+This project provides a simple way to run OpenAI Whisper on your Mac using Automator. With this setup, you can transcribe audio files directly from Finder with a right-click. This guide will walk you through installing dependencies, setting up the transcription script, and integrating it with Automator.
 
-## Prerequisites
+---
 
-Before using the script, ensure the following components are installed on your macOS system:
+## **Prerequisites**
+### **System Requirements**
+- macOS with Apple Silicon (M1/M2/M3)
+- At least **16GB RAM** for large models (smaller models work with less)
+- Homebrew installed
+- Python 3.11+ installed
 
-1. **Homebrew**: A package manager for macOS. Install it by running:
-   ```bash
+### **Software Dependencies**
+- Homebrew
+- Python 3.x
+- `mlx_whisper` (Whisper fork optimized for macOS)
+- Automator (pre-installed on macOS)
+
+---
+
+## **Installation & Setup**
+### **Step 1: Setting Up Your Environment**
+1. **Install Homebrew** (if not already installed):
+   ```sh
    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
    ```
 
-2. **Python 3.12**: Install via Homebrew:
-   ```bash
-   brew install python@3.12
-   ```
+2. **Create a HuggingFace Account & Generate a Token**
+   - Sign up at [HuggingFace](https://huggingface.co/)
+   - Go to *Settings > Access Tokens* and create a new token (you'll need this later)
 
-3. **mlx_whisper**: A fork of OpenAI's Whisper optimized for macOS. Install it using `pip`:
-   ```bash
+3. **Install `mlx_whisper`**
+   ```sh
    pip install mlx_whisper
    ```
-
-4. **FFmpeg**: A multimedia framework required for processing audio files. Install it with:
-   ```bash
-   brew install ffmpeg
+   - If you have Python 3.11 and encounter issues, try:
+   ```sh
+   pip install mlx_whisper --ignore-requires-python
    ```
 
-## Script Details
+4. **Update Your Zsh Configuration**
+   ```sh
+   nano ~/.zshrc
+   ```
+   Add this line at the end:
+   ```sh
+   export PATH="/opt/homebrew/bin:$PATH"
+   ```
+   Save and exit (`CTRL + X`, then `Y` and `Enter`).
+   
+   Apply the changes:
+   ```sh
+   source ~/.zshrc
+   ```
 
-The provided script performs the following functions:
+---
 
-- **Sets the PATH**: Ensures Automator can locate Homebrew-installed packages by setting the appropriate PATH.
+### **Step 2: Creating the Transcription Script**
+1. **Create the Script File**
+   ```sh
+   touch transcribe.sh
+   ```
 
-- **Defines the Path to `mlx_whisper`**: Specifies the location of the `mlx_whisper` executable.
+2. **Open and Edit the Script**
+   Copy and paste the following into `transcribe.sh`: (Or download the file above)
+   
+   ```zsh
+   #!/bin/zsh
+   
+   # Ensure Automator can find Homebrew-installed packages
+   export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin:$PATH"
+   
+   # Path to mlx_whisper
+   WHISPER_PATH="/Library/Frameworks/Python.framework/Versions/3.12/bin/mlx_whisper"
+   
+   # Debugging logs
+   DEBUG_LOG="$HOME/whisper_debug.log"
+   echo "Running Whisper Script" > "$DEBUG_LOG"
+   
+   # Check if mlx_whisper exists
+   if [[ ! -x "$WHISPER_PATH" ]]; then
+       echo "Error: mlx_whisper not found at $WHISPER_PATH" | tee -a "$DEBUG_LOG"
+       exit 1
+   fi
+   
+   # Loop through input files
+   for audio_file in "$@"; do
+       echo "Processing: $audio_file" >> "$DEBUG_LOG"
+       
+       # Define output file
+       base_file="$(basename "$audio_file")"
+       output_dir="$(dirname "$audio_file")"
+       transcript_file="${output_dir}/${base_file}.txt"
+       
+       echo "Transcript will be saved to: $transcript_file" >> "$DEBUG_LOG"
+       
+       # Run Whisper
+       "$WHISPER_PATH" \
+           --model mlx-community/whisper-large-v3-mlx \
+           --language English \
+           --output-format txt \
+           --word-timestamps False \
+           --condition-on-previous-text False \
+           --output-name "${base_file}" \
+           --output-dir "${output_dir}" \
+           "$audio_file"
+   done
+   ```
 
-- **Initializes Logs**: Creates debug and timing logs to monitor the script's execution and performance.
+3. **Make the Script Executable**
+   ```sh
+   chmod +x transcribe.sh
+   ```
 
-- **Checks for `mlx_whisper`**: Verifies that the `mlx_whisper` executable exists at the specified path.
+---
 
-- **Processes Each Audio File**: Iterates over selected audio files, determines the output directory and filename, and runs the transcription using `mlx_whisper`.
+### **Step 3: Creating an Automator Quick Action**
+1. **Open Automator**
+   - Press `Cmd + Space`, type `Automator`, and open it.
 
-- **Handles Errors**: Logs any errors encountered during the transcription process.
+2. **Create a New Quick Action**
+   - Select `New Document` > `Quick Action`.
+   - Set `Workflow receives current` to `audio files`.
 
-## Integration with Automator
+3. **Add the Run Shell Script Action**
+   - In the search bar, type `Run Shell Script` and drag it into the workflow.
+   - Set Shell to `/bin/zsh` and choose `Pass input as arguments`.
 
-To integrate this script into macOS Automator for seamless right-click functionality:
+4. **Insert Script Call**
+   - Replace the default text with:
+   ```sh
+   /path/to/transcribe.sh "$@"
+   ```
+   *(Replace `/path/to/` with the actual path to your script)*
 
-1. **Open Automator**: Launch the Automator application from the Applications folder.
+5. **Save the Quick Action**
+   - Press `Cmd + S`, name it `Transcribe with Whisper`, and save.
 
-2. **Create a New Document**: Choose "Quick Action" as the type of document.
+---
 
-3. **Set Workflow Options**:
-   - Workflow receives current: `audio files`
-   - In: `Finder`
+### **Step 4: Using Your Quick Action**
+1. **Find an Audio File in Finder**
+2. **Right-click > Quick Actions > Transcribe with Whisper**
+3. **Wait for Transcription**
+   - The transcript will appear in the same folder as the audio file with a `.txt` extension.
+   - Debug logs are saved at `~/whisper_debug.log`.
 
-4. **Add "Run Shell Script" Action**:
-   - Drag the "Run Shell Script" action into the workflow area.
-   - Set the shell to `/bin/zsh`.
-   - Set "Pass input" to `as arguments`.
+---
 
-5. **Insert the Script**:
-   - Copy and paste the provided script into the "Run Shell Script" action.
+## **Troubleshooting**
+- **mlx_whisper command not found?**
+  - Ensure it's installed: `which mlx_whisper`
+  - If missing, reinstall: `pip install mlx_whisper --ignore-requires-python`
 
-6. **Save the Workflow**:
-   - Name it "Transcribe with Whisper" or a similar descriptive title.
+- **Quick Action not appearing in Finder?**
+  - Restart Finder (`Cmd + Option + Escape > Finder > Relaunch`).
+  - Ensure Automator settings match the guide.
 
-Now, when you right-click on an audio file in Finder, you'll have the option to "Transcribe with Whisper," which will execute the script and generate a transcript in the same directory as the audio file.
+---
 
-## Acknowledgments
+## **You're Done!**
+Now you have a fully automated transcription tool on your Mac! If you found this helpful, feel free to star this repo and share your experience.
 
-This script and integration process were inspired and informed by the following resources:
 
-- **OpenAI's Whisper**: The foundational speech recognition model. [OpenAI Whisper](https://en.wikipedia.org/wiki/Whisper_%28speech_recognition_system%29)
-
-- **mlx_whisper on Hugging Face**: The macOS-optimized fork of Whisper. [mlx_whisper on Hugging Face](https://huggingface.co/ml6team/whisper-large-v2)
-
-- **Sean Keever's Guide**: An insightful article on setting up Whisper transcription on macOS. [Whisper macOS Transcription](https://seankeever.substack.com/p/whisper-macos-transcription?triedRedirect=true)
-
-- **YouTube Tutorials**:
-   - [OpenAI Whisper - Installation and Setup](https://www.youtube.com/watch?v=zeu4yGBdGkw)
-   - [Automating Transcriptions with Whisper and Automator](https://www.youtube.com/watch?v=OIl4H2WgJxM&t=82s)
-   - [Integrating Whisper with macOS Services](https://www.youtube.com/watch?v=BaZy7cFXklc&t=7s)
-
-These resources provided valuable guidance in the development and optimization of this script. 
