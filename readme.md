@@ -163,4 +163,15 @@ This project provides a simple way to run OpenAI Whisper on your Mac using Autom
 ## **You're Done!**
 Now you have a fully automated transcription tool on your Mac! If you found this helpful, feel free to star this repo and share your experience.
 
+## Acknowledgments
 
+This script and integration process were inspired and informed by the following resources:
+- **OpenAI's Whisper**: The foundational speech recognition model. [OpenAI Whisper](https://en.wikipedia.org/wiki/Whisper_%28speech_recognition_system%29)
+- **mlx_whisper on Hugging Face**: The macOS-optimized fork of Whisper. [mlx_whisper on Hugging Face](https://huggingface.co/ml6team/whisper-large-v2)
+- **Sean Keever's Guide**: An insightful article on setting up Whisper transcription on macOS. [Whisper macOS Transcription](https://seankeever.substack.com/p/whisper-macos-transcription?triedRedirect=true)
+- **YouTube Tutorials**:
+  - [OpenAI Whisper - Installation and Setup](https://www.youtube.com/watch?v=zeu4yGBdGkw)
+  - [Automating Transcriptions with Whisper and Automator](https://www.youtube.com/watch?v=OIl4H2WgJxM&t=82s)
+  - [Integrating Whisper with macOS Services](https://www.youtube.com/watch?v=BaZy7cFXklc&t=7s)
+
+These resources provided valuable guidance in the development and optimization of this script.
