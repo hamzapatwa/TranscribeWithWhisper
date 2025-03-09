@@ -96,6 +96,10 @@ This project provides a simple way to run OpenAI Whisper on your Mac using Autom
        
        echo "Transcript will be saved to: $transcript_file" >> "$DEBUG_LOG"
        
+           # Note: The --condition-on-previous-text False is for no previous text conditioning, you can change this to True if you want.
+          #       True will give more accurate results, but it will take longer, and tends to hallucinate on
+          #       long clips (> 10 minutes)
+
        # Run Whisper
        "$WHISPER_PATH" \
            --model mlx-community/whisper-large-v3-mlx \

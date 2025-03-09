@@ -27,16 +27,19 @@ for audio_file in "$@"; do
     base_file="$(basename "$audio_file")"
     output_dir="$(dirname "$audio_file")"
     transcript_file="${output_dir}/${base_file}.txt"
-    
     echo "Transcript will be saved to: $transcript_file" >> "$DEBUG_LOG"
-    
+
     # Run whisper. You can change this based on what fork of Whisper you're using.
-    TIMEFORMAT='Total time: %E'
+    # This command Large-V3 mode, you can find the rest at: https://huggingface.co/mlx-community?search_models=whisper
+    
+    # Note: The --condition-on-previous-text False is for no previous text conditioning, you can change this to True if you want.
+    #       True will give more accurate results, but it will take longer, and tends to hallucinate on long clips (> 10 minutes)
+
     { time "$WHISPER_PATH" \
         --model mlx-community/whisper-large-v3-mlx \
         --language English \
-        --output-format txt \
-        --word-timestamps False \
+        --output-format vtt \
+        --word-timestamps True \
         --condition-on-previous-text False \
         --output-name "${base_file}" \
         --output-dir "${output_dir}" \
@@ -47,5 +50,4 @@ for audio_file in "$@"; do
         echo "Error processing file: $audio_file" | tee -a "$DEBUG_LOG"
         exit 1
     fi
-
 done
